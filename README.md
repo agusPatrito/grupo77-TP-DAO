@@ -1,8 +1,8 @@
 # grupo77-TP-DAO
 # Tema: Canchas de Futbol
-# Integrantes \n
-Patrito Agustin 94142
+# Integrantes:Patrito Agustin 94142
 Soria Ignacio 94607
 Dagnino Facundo
 Caranta Pablo
 Soria Bautista
+
