@@ -4,7 +4,8 @@ from PIL import Image
 from services.reservation_service import ReservationService
 from tkcalendar import Calendar
 import datetime
-from gui.estilos import FUENTE_BASE, FUENTE_TITULO_VISTA, mostrar_mensaje_personalizado # importamos la funcion de mensaje
+from gui.estilos import FUENTE_BASE, FUENTE_TITULO_VISTA
+from gui.custom_messagebox import mostrar_mensaje_personalizado
 
 class VistaReservas(ctk.CTkFrame):
     def __init__(self, parent, controller):
@@ -106,9 +107,10 @@ class VistaReservas(ctk.CTkFrame):
         ctk.CTkRadioButton(frame_filtros, text="Todas", variable=self.filtro_estado_var, value="Todas", command=self.cargar_reservas, font=FUENTE_BASE).pack(side="left", padx=5)
         ctk.CTkRadioButton(frame_filtros, text="Confirmadas", variable=self.filtro_estado_var, value="Confirmada", command=self.cargar_reservas, font=FUENTE_BASE).pack(side="left", padx=5)
         ctk.CTkRadioButton(frame_filtros, text="Canceladas", variable=self.filtro_estado_var, value="Cancelada", command=self.cargar_reservas, font=FUENTE_BASE).pack(side="left", padx=5)
+        ctk.CTkRadioButton(frame_filtros, text="Finalizadas", variable=self.filtro_estado_var, value="Finalizada", command=self.cargar_reservas, font=FUENTE_BASE).pack(side="left", padx=5)
         
-        # boton para eliminar reservas canceladas
         ctk.CTkButton(frame_filtros, text="Eliminar Canceladas", command=self.eliminar_reservas_canceladas, font=FUENTE_BASE, fg_color="red").pack(side="right", padx=5)
+        ctk.CTkButton(frame_filtros, text="Refrescar Datos", command=self.refrescar_datos, font=FUENTE_BASE).pack(side="right", padx=5)
 
         # treeview
         style = ttk.Style()
@@ -153,8 +155,6 @@ class VistaReservas(ctk.CTkFrame):
             cancha = self.servicio.servicio_cancha.obtener_cancha_por_id(id_cancha)
             if not cancha: return
 
-            # Obtener horarios disponibles para la cancha y fecha seleccionada
-            # self.servicio.obtener_horarios_disponibles_para_cancha(id_cancha, dia_semana) # <-- Error aquí
             horarios_base_libres = self.servicio.obtener_horarios_disponibles_para_cancha(id_cancha, fecha_seleccionada_str)
             
             horas_disponibles = []
@@ -181,9 +181,6 @@ class VistaReservas(ctk.CTkFrame):
                         break
                     
                     # Verificamos si el slot individual esta ocupado en HorariosXCanchas
-                    # La logica de ocupacion ya esta en obtener_horarios_disponibles_para_cancha del servicio
-                    # que filtra los horarios base.
-                    # Solo necesitamos verificar que el resto de los slots del bloque tambien esten libres.
                     horario_check_obj = self.servicio.horarios_dao.obtener_por_hora_inicio(hora_slot_str_check)
                     if not horario_check_obj or self.servicio.horarios_x_canchas_dao.verificar_ocupacion(id_cancha, horario_check_obj.id_horario, fecha_seleccionada_str, self.servicio.id_estado_confirmada):
                         bloque_disponible = False
@@ -234,9 +231,19 @@ class VistaReservas(ctk.CTkFrame):
         
         reservas = self.servicio.obtener_detalles_reservas()
         filtro = self.filtro_estado_var.get()
+        hoy_str = datetime.date.today().strftime('%Y-%m-%d')
 
         for res in reservas:
-            if filtro == "Todas" or res['estado_reserva_nombre'] == filtro: # Usar 'estado_reserva_nombre'
+            mostrar = False
+            if filtro == "Todas":
+                mostrar = True
+            elif filtro == "Finalizada":
+                if res['fecha'] < hoy_str:
+                    mostrar = True
+            elif res['estado_reserva_nombre'] == filtro and res['fecha'] >= hoy_str:
+                mostrar = True
+            
+            if mostrar:
                 self.arbol.insert("", "end", values=(res['id_reserva'], res['cliente_nombre'], res['cancha_nombre'], res['fecha'], res['hora_inicio'], res['duracion_horas'], res['estado_reserva_nombre'], res['monto_total']))
 
     def agregar_reserva(self):
@@ -248,7 +255,7 @@ class VistaReservas(ctk.CTkFrame):
             duracion = self.duracion_var.get()
             monto = self.monto_var.get()
             
-            self.servicio.agregar_reserva(id_cliente, id_cancha, fecha, hora, duracion, monto) # Ya no pasamos el estado
+            self.servicio.agregar_reserva(id_cliente, id_cancha, fecha, hora, duracion, monto)
             mostrar_mensaje_personalizado(self.controller, "Exito", "Reserva agregada", tipo="info")
             self.refrescar_datos()
             self.limpiar_formulario()

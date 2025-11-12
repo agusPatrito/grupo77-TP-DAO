@@ -70,7 +70,8 @@ class CanchaDAO:
         conn.close()
         return Cancha(**cancha_data) if cancha_data else None
 
-    def obtener_todos_con_estado(self): # este metodo obtiene las canchas sin el estado porque ya no existe esa tabla
+    # este metodo obtiene las canchas sin el estado porque ya no existe esa tabla
+    def obtener_todos_con_estado(self): 
         conn = obtener_conexion_bd()
         cursor = conn.cursor()
         cursor.execute("""
@@ -234,5 +235,30 @@ class ReservaDAO:
         
         conn.commit()
         conn.close()
+
+    def reporte_canchas_mas_utilizadas(self):
+        conn = obtener_conexion_bd()
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT c.nombre, COUNT(r.id_reserva) as total_reservas
+            FROM reservas r
+            JOIN canchas c ON r.id_cancha = c.id_cancha
+            WHERE r.id_estado_reserva = (SELECT id_estado_reserva FROM estados_reserva WHERE nombre_estado = 'Confirmada')
+            GROUP BY c.nombre
+            ORDER BY total_reservas DESC
+        """)
+        return cursor.fetchall()
+
+    def reporte_utilizacion_mensual(self):
+        conn = obtener_conexion_bd()
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT strftime('%Y-%m', fecha) as mes, COUNT(id_reserva) as total_reservas
+            FROM reservas
+            WHERE id_estado_reserva = (SELECT id_estado_reserva FROM estados_reserva WHERE nombre_estado = 'Confirmada')
+            GROUP BY mes
+            ORDER BY mes
+        """)
+        return cursor.fetchall()
 
 # las clases DAO para Torneo, DetalleTorneoReserva pueden añadirse aqui

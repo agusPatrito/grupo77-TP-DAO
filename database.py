@@ -1,5 +1,6 @@
 import sqlite3
 import datetime
+import random
 
 def obtener_conexion_bd():
     # establece una conexion con la base de datos sqlite
@@ -15,10 +16,10 @@ def crear_tablas():
     # eliminamos tablas para empezar de cero en cada ejecucion (solo para desarrollo)
     cursor.execute("DROP TABLE IF EXISTS detalle_torneo_reserva;")
     cursor.execute("DROP TABLE IF EXISTS torneos;")
-    cursor.execute("DROP TABLE IF EXISTS horarios_x_canchas;") # Nueva tabla
+    cursor.execute("DROP TABLE IF EXISTS horarios_x_canchas;")
     cursor.execute("DROP TABLE IF EXISTS reservas;")
-    cursor.execute("DROP TABLE IF EXISTS horarios;") # Nueva tabla
-    cursor.execute("DROP TABLE IF EXISTS estados_reserva;") # Nueva tabla
+    cursor.execute("DROP TABLE IF EXISTS horarios;")
+    cursor.execute("DROP TABLE IF EXISTS estados_reserva;")
     cursor.execute("DROP TABLE IF EXISTS canchas;")
     cursor.execute("DROP TABLE IF EXISTS clientes;")
 
@@ -86,25 +87,6 @@ def crear_tablas():
             UNIQUE (id_cancha, id_horario, fecha)
         );
     """)
-
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS torneos (
-            id_torneo INTEGER PRIMARY KEY AUTOINCREMENT,
-            nombre TEXT NOT NULL,
-            fecha_inicio TEXT,
-            fecha_fin TEXT
-        );
-    """)
-
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS detalle_torneo_reserva (
-            id_torneo INTEGER NOT NULL,
-            id_reserva INTEGER NOT NULL,
-            PRIMARY KEY (id_torneo, id_reserva),
-            FOREIGN KEY (id_torneo) REFERENCES torneos (id_torneo),
-            FOREIGN KEY (id_reserva) REFERENCES reservas (id_reserva)
-        );
-    """)
     
     conn.commit()
     conn.close()
@@ -147,9 +129,53 @@ def poblar_datos_iniciales():
     ]
     cursor.executemany("INSERT INTO estados_reserva (nombre_estado, descripcion) VALUES (?, ?)", estados_reserva)
 
+    # --- Generación de datos históricos ---
+    hoy = datetime.date.today()
+    cursor.execute("SELECT id_cliente FROM clientes")
+    ids_cliente = [row[0] for row in cursor.fetchall()]
+    cursor.execute("SELECT id_cancha, tarifa_hora FROM canchas")
+    canchas_data = cursor.fetchall()
+    cursor.execute("SELECT id_horario, hora_inicio FROM horarios")
+    horarios_data = cursor.fetchall()
+    cursor.execute("SELECT id_estado_reserva FROM estados_reserva WHERE nombre_estado = 'Confirmada'")
+    id_estado_confirmada = cursor.fetchone()[0]
+
+    for i in range(90): # para los ultimos 90 dias
+        fecha = hoy - datetime.timedelta(days=i)
+        
+        # generar entre 2 y 5 reservas por dia
+        for _ in range(random.randint(2, 5)):
+            cancha = random.choice(canchas_data)
+            id_cancha = cancha['id_cancha']
+            tarifa_hora = cancha['tarifa_hora']
+            
+            cliente_id = random.choice(ids_cliente)
+            horario = random.choice(horarios_data)
+            id_horario = horario['id_horario']
+            hora_inicio = horario['hora_inicio']
+            
+            # verificar si el slot ya esta ocupado
+            cursor.execute("SELECT 1 FROM horarios_x_canchas WHERE id_cancha = ? AND id_horario = ? AND fecha = ?", (id_cancha, id_horario, fecha.strftime('%Y-%m-%d')))
+            if cursor.fetchone():
+                continue # slot ocupado, saltar a la siguiente iteracion
+
+            # crear la reserva
+            reserva = (cliente_id, id_cancha, id_estado_confirmada, fecha.strftime('%Y-%m-%d'), hora_inicio, 1, tarifa_hora)
+            cursor.execute("""
+                INSERT INTO reservas (id_cliente, id_cancha, id_estado_reserva, fecha, hora_inicio, duracion_horas, monto_total)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+            """, reserva)
+            id_reserva_creada = cursor.lastrowid
+
+            # ocupar el slot
+            cursor.execute("""
+                INSERT INTO horarios_x_canchas (id_cancha, id_horario, id_reserva, fecha)
+                VALUES (?, ?, ?, ?)
+            """, (id_cancha, id_horario, id_reserva_creada, fecha.strftime('%Y-%m-%d')))
+
     conn.commit()
     conn.close()
-    print("Base de datos poblada con datos iniciales.")
+    print("Base de datos poblada con datos iniciales e históricos.")
 
 if __name__ == '__main__':
     crear_tablas()

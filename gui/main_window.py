@@ -3,6 +3,7 @@ from PIL import Image
 from gui.clients_view import VistaClientes
 from gui.courts_view import VistaCanchas
 from gui.reservations_view import VistaReservas
+from gui.reporting_view import VistaReportes # Importar la nueva vista
 from gui.estilos import FUENTE_BOTON_MENU, FUENTE_TITULO_APP, FUENTE_ESLOGAN # importamos las fuentes
 
 class VentanaPrincipal(ctk.CTk):
@@ -44,17 +45,18 @@ class VentanaPrincipal(ctk.CTk):
             self.img_clientes = ctk.CTkImage(Image.open("gui/assets/clientes.png"), size=(48, 48))
             self.img_canchas = ctk.CTkImage(Image.open("gui/assets/canchas.png"), size=(48, 48))
             self.img_reservas = ctk.CTkImage(Image.open("gui/assets/reservas.png"), size=(48, 48))
+            self.img_reportes = ctk.CTkImage(Image.open("gui/assets/reportes.png"), size=(48, 48)) # Nuevo icono
             self.img_logo = ctk.CTkImage(Image.open("gui/assets/logo.png"), size=(200, 200)) # tamaño para el logo
         except Exception as e:
             print(f"Error al cargar imagenes: {e}")
-            self.img_clientes = self.img_canchas = self.img_reservas = self.img_logo = None
+            self.img_clientes = self.img_canchas = self.img_reservas = self.img_reportes = self.img_logo = None
 
         # contenedor para los botones (columna 0)
         frame_botones_menu = ctk.CTkFrame(menu_frame, fg_color="transparent")
         frame_botones_menu.grid(row=0, column=0, sticky="ns", padx=20, pady=20)
         frame_botones_menu.grid_columnconfigure(0, weight=1)
         frame_botones_menu.grid_rowconfigure(0, weight=1) # espacio superior
-        frame_botones_menu.grid_rowconfigure(5, weight=1) # espacio inferior
+        frame_botones_menu.grid_rowconfigure(6, weight=1) # espacio inferior
 
         btn_clientes = ctk.CTkButton(frame_botones_menu, text="Gestionar Clientes", image=self.img_clientes,
                                      compound="top", height=120, width=220, font=FUENTE_BOTON_MENU,
@@ -70,6 +72,11 @@ class VentanaPrincipal(ctk.CTk):
                                      compound="top", height=120, width=220, font=FUENTE_BOTON_MENU,
                                      command=lambda: self.mostrar_vista("vista_reservas"))
         btn_reservas.grid(row=3, column=0, pady=15)
+
+        btn_reportes = ctk.CTkButton(frame_botones_menu, text="Ver Reportes", image=self.img_reportes,
+                                     compound="top", height=120, width=220, font=FUENTE_BOTON_MENU,
+                                     command=lambda: self.mostrar_vista("vista_reportes"))
+        btn_reportes.grid(row=4, column=0, pady=15)
 
         # linea separadora (columna 1)
         linea_separadora = ctk.CTkFrame(menu_frame, width=2, fg_color="gray50") # linea delgada gris
@@ -101,10 +108,12 @@ class VentanaPrincipal(ctk.CTk):
         lbl_eslogan = ctk.CTkLabel(frame_logo_y_titulos, text='"Reserva tu pasión, juega sin límites."', font=FUENTE_ESLOGAN, text_color="gray70")
         lbl_eslogan.grid(row=3, column=0, pady=(0, 0))
 
+
         # creamos y registramos las otras pantallas
         self.vistas["vista_clientes"] = VistaClientes(self.contenedor, self)
         self.vistas["vista_canchas"] = VistaCanchas(self.contenedor, self)
         self.vistas["vista_reservas"] = VistaReservas(self.contenedor, self)
+        self.vistas["vista_reportes"] = VistaReportes(self.contenedor, self) # Registrar la nueva vista
 
     def mostrar_vista(self, nombre_vista):
         # muestra la pantalla que le pedimos y esconde las demas
