@@ -1,0 +1,8 @@
+customtkinter
+Pillow
+tkcalendar
+CTkMessagebox
+matplotlib
+numpy
+pandas
+
