@@ -129,20 +129,103 @@ class VistaReservas(ctk.CTkFrame):
         # frame de la tabla (derecha)
         frame_tabla = ctk.CTkFrame(self.frame_principal)
         frame_tabla.grid(row=0, column=1, padx=20, pady=20, sticky="nsew")
-        frame_tabla.grid_rowconfigure(1, weight=1)
+
+        # 👉 todas las filas de filtros con weight 0
+        frame_tabla.grid_rowconfigure(0, weight=0)   # fila filtros estado
+        frame_tabla.grid_rowconfigure(1, weight=0)   # fila filtro fecha
+        frame_tabla.grid_rowconfigure(2, weight=0)   # fila filtro cancha
+
+        # 👉 solo la fila de la tabla se expande
+        frame_tabla.grid_rowconfigure(3, weight=1)
+
         frame_tabla.grid_columnconfigure(0, weight=1)
 
+        # ----- FILTROS (PRIMERA FILA) -----
         frame_filtros = ctk.CTkFrame(frame_tabla)
         frame_filtros.grid(row=0, column=0, padx=10, pady=10, sticky="ew")
         self.filtro_estado_var = ctk.StringVar(value="Todas")
+        self.filtro_fecha_var = ctk.StringVar()  # nueva variable para filtrar por fecha (YYYY-MM-DD)
         ctk.CTkLabel(frame_filtros, text="Filtrar:", font=FUENTE_BASE).pack(side="left", padx=5)
         ctk.CTkRadioButton(frame_filtros, text="Todas", variable=self.filtro_estado_var, value="Todas", command=self.cargar_reservas, font=FUENTE_BASE).pack(side="left", padx=5)
         ctk.CTkRadioButton(frame_filtros, text="Confirmadas", variable=self.filtro_estado_var, value="Confirmada", command=self.cargar_reservas, font=FUENTE_BASE).pack(side="left", padx=5)
         ctk.CTkRadioButton(frame_filtros, text="Canceladas", variable=self.filtro_estado_var, value="Cancelada", command=self.cargar_reservas, font=FUENTE_BASE).pack(side="left", padx=5)
         ctk.CTkRadioButton(frame_filtros, text="Finalizadas", variable=self.filtro_estado_var, value="Finalizada", command=self.cargar_reservas, font=FUENTE_BASE).pack(side="left", padx=5)
 
-        ctk.CTkButton(frame_filtros, text="Eliminar Canceladas", command=self.eliminar_reservas_canceladas, font=FUENTE_BASE, fg_color="red").pack(side="right", padx=5)
-        ctk.CTkButton(frame_filtros, text="Refrescar Datos", command=self.refrescar_datos, font=FUENTE_BASE).pack(side="right", padx=5)
+        ctk.CTkButton(
+            frame_filtros,
+            text="Eliminar Finalizadas",
+            command=self.eliminar_reservas_finalizadas,
+            font=FUENTE_BASE,
+            fg_color="#FF8800"
+        ).pack(side="right", padx=5)
+
+        ctk.CTkButton(
+            frame_filtros,
+            text="Eliminar Canceladas",
+            command=self.eliminar_reservas_canceladas,
+            font=FUENTE_BASE,
+            fg_color="red"
+        ).pack(side="right", padx=5)
+
+        ctk.CTkButton(
+            frame_filtros,
+            text="Refrescar Datos",
+            command=self.refrescar_datos,
+            font=FUENTE_BASE
+        ).pack(side="right", padx=5)
+
+        # ----- Filtro por fecha (fila 1) -----
+        self.fecha_filtro_var = ctk.StringVar()
+
+        frame_filtro_fecha = ctk.CTkFrame(frame_tabla)
+        frame_filtro_fecha.grid(row=1, column=0, padx=10, pady=(0, 10), sticky="ew")
+        frame_filtro_fecha.grid_columnconfigure((0, 1, 2, 3), weight=0)
+        frame_filtro_fecha.grid_columnconfigure(4, weight=1)  # empuja a la derecha los botones
+
+        ctk.CTkLabel(frame_filtro_fecha, text="Fecha (YYYY-MM-DD):",
+                    font=FUENTE_BASE).grid(row=0, column=0, padx=5, pady=5, sticky="w")
+
+        self.entrada_fecha_filtro = ctk.CTkEntry(frame_filtro_fecha,
+                                                textvariable=self.fecha_filtro_var,
+                                                width=140,
+                                                font=FUENTE_BASE)
+        self.entrada_fecha_filtro.grid(row=0, column=1, padx=5, pady=5, sticky="w")
+
+        ctk.CTkButton(frame_filtro_fecha, text="Aplicar fecha",
+                    command=self.cargar_reservas,
+                    font=FUENTE_BASE, width=110).grid(row=0, column=2, padx=5, pady=5)
+
+        ctk.CTkButton(frame_filtro_fecha, text="Quitar filtro",
+                    command=self._limpiar_filtro_fecha,
+                    font=FUENTE_BASE, width=110).grid(row=0, column=3, padx=5, pady=5)
+
+        # === 3) FILTRO POR CANCHA (TERCERA FILA) ===
+        frame_filtro_cancha = ctk.CTkFrame(frame_tabla)
+        frame_filtro_cancha.grid(row=2, column=0, padx=10, pady=5, sticky="ew")
+        frame_filtro_cancha.grid_columnconfigure(1, weight=1)
+
+        ctk.CTkLabel(frame_filtro_cancha, text="Cancha:", font=FUENTE_BASE).grid(row=0, column=0, padx=5)
+
+        self.filtro_cancha_var = ctk.StringVar()
+        self.combo_filtro_cancha = ctk.CTkComboBox(
+            frame_filtro_cancha,
+            variable=self.filtro_cancha_var,
+            values=[],
+            state="readonly",
+            font=FUENTE_BASE,
+            command=lambda _: self.cargar_reservas()
+        )
+        self.combo_filtro_cancha.grid(row=0, column=1, padx=5, sticky="ew")
+
+        # botón limpiar filtro cancha
+        ctk.CTkButton(
+            frame_filtro_cancha,
+            text="Limpiar cancha",
+            width=120,
+            font=FUENTE_BASE,
+            command=self._limpiar_filtro_cancha
+        ).grid(row=0, column=2, padx=5)
+
 
         # treeview
         style = ttk.Style()
@@ -165,7 +248,19 @@ class VistaReservas(ctk.CTkFrame):
         self.arbol.heading("Duracion", text="Duracion")
         self.arbol.heading("Estado", text="Estado")
         self.arbol.heading("Monto", text="Monto")
-        self.arbol.grid(row=1, column=0, sticky="nsew")
+        
+
+        self.arbol.column("ID", width=50, anchor="center", stretch=False)
+        self.arbol.column("Hora", width=70, anchor="center", stretch=False)
+        self.arbol.column("Duracion", width=80, anchor="center", stretch=False)
+        self.arbol.column("Cliente", width=180, anchor="w")
+        self.arbol.column("Cancha", width=200, anchor="w")
+        self.arbol.column("Fecha", width=100, anchor="center")
+        self.arbol.column("Estado", width=110, anchor="center")
+        self.arbol.column("Monto", anchor="center", width=90)
+
+
+        self.arbol.grid(row=3, column=0, sticky="nsew")
 
         # estructuras auxiliares
         self.clientes = {}
@@ -189,6 +284,8 @@ class VistaReservas(ctk.CTkFrame):
             for c in self.servicio.obtener_todas_las_canchas()
         }
         self.combo_cancha.configure(values=list(self.canchas_map.keys()))
+        # Cargar nombres de canchas en el filtro
+        self.combo_filtro_cancha.configure(values=list(self.canchas_map.keys()))
 
         self.cargar_reservas()
         self.actualizar_horarios_disponibles()
@@ -313,38 +410,86 @@ class VistaReservas(ctk.CTkFrame):
         self.actualizar_horarios_disponibles()
 
     def cargar_reservas(self):
-        for i in self.arbol.get_children():
-            self.arbol.delete(i)
+        # limpiar tabla
+        for item in self.arbol.get_children():
+            self.arbol.delete(item)
 
         reservas = self.servicio.obtener_detalles_reservas()
-        filtro = self.filtro_estado_var.get()
+        filtro_estado = self.filtro_estado_var.get()
+        fecha_filtro = self.fecha_filtro_var.get().strip()
         hoy_str = datetime.date.today().strftime('%Y-%m-%d')
 
+        # 👇 nuevo: valor del filtro de cancha
+        cancha_filtro = ""
+        if hasattr(self, "filtro_cancha_var"):
+            cancha_filtro = self.filtro_cancha_var.get().strip()
+
+        reservas_filtradas = []
+
         for res in reservas:
+            fecha = res["fecha"]
+            estado = res["estado_reserva_nombre"]
+
+            # 1) filtro por estado
             mostrar = False
-            if filtro == "Todas":
+            if filtro_estado == "Todas":
                 mostrar = True
-            elif filtro == "Finalizada":
-                if res['fecha'] < hoy_str:
+            elif filtro_estado == "Finalizada":
+                if fecha < hoy_str:
                     mostrar = True
-            elif res['estado_reserva_nombre'] == filtro and res['fecha'] >= hoy_str:
+            elif estado == filtro_estado and fecha >= hoy_str:
                 mostrar = True
 
-            if mostrar:
-                self.arbol.insert(
-                    "",
-                    "end",
-                    values=(
-                        res['id_reserva'],
-                        res['cliente_nombre'],
-                        res['cancha_nombre'],
-                        res['fecha'],
-                        res['hora_inicio'],
-                        res['duracion_horas'],
-                        res['estado_reserva_nombre'],
-                        res['monto_total']
-                    )
+            if not mostrar:
+                continue
+
+            # 2) filtro por fecha (si hay algo escrito)
+            if fecha_filtro:
+                # la fecha tiene que ser EXACTAMENTE igual al texto ingresado
+                if fecha != fecha_filtro:
+                    continue
+
+            # 3) filtro por cancha (si hay algo elegido)
+            if cancha_filtro:
+                # en el combo guardamos "id - nombre", en la BD sólo el nombre
+                nombre_cancha_filtro = (
+                    cancha_filtro.split(" - ", 1)[1]
+                    if " - " in cancha_filtro
+                    else cancha_filtro
                 )
+                if res["cancha_nombre"] != nombre_cancha_filtro:
+                    continue
+
+            reservas_filtradas.append(res)
+
+        # 4) ordenar por fecha y hora DESCENDENTE
+        reservas_ordenadas = sorted(
+            reservas_filtradas,
+            key=lambda r: (r["fecha"], r["hora_inicio"]),
+            reverse=True,
+        )
+
+        # 5) cargar a la tabla
+        for res in reservas_ordenadas:
+            self.arbol.insert(
+                "",
+                "end",
+                values=(
+                    res["id_reserva"],
+                    res["cliente_nombre"],
+                    res["cancha_nombre"],
+                    res["fecha"],
+                    res["hora_inicio"],
+                    res["duracion_horas"],
+                    res["estado_reserva_nombre"],
+                    res["monto_total"],
+                ),
+            )
+
+    def _limpiar_filtro_fecha(self):
+        self.fecha_filtro_var.set("")
+        self.cargar_reservas()
+
 
     def _obtener_o_crear_cliente(self):
         texto = self.cliente_var.get().strip()
@@ -472,6 +617,35 @@ class VistaReservas(ctk.CTkFrame):
                     self.controller, "Error",
                     f"Ocurrio un error al eliminar reservas canceladas: {e}", tipo="error"
                 )
+
+    def eliminar_reservas_finalizadas(self):
+        respuesta = mostrar_mensaje_personalizado(
+            self.controller,
+            "Confirmar Eliminación",
+            "¿Está seguro de que desea eliminar TODAS las reservas finalizadas (fechas pasadas)? Esta acción es irreversible.",
+            tipo="question"
+        )
+        if respuesta:
+            try:
+                self.servicio.eliminar_reservas_finalizadas()
+                mostrar_mensaje_personalizado(
+                    self.controller,
+                    "Éxito",
+                    "Reservas finalizadas eliminadas correctamente",
+                    tipo="info"
+                )
+                self.refrescar_datos()
+            except Exception as e:
+                mostrar_mensaje_personalizado(
+                    self.controller,
+                    "Error",
+                    f"Ocurrió un error al eliminar reservas finalizadas: {e}",
+                    tipo="error"
+                )
+
+    def _limpiar_filtro_cancha(self):
+        self.filtro_cancha_var.set("")
+        self.cargar_reservas()
 
     def limpiar_formulario(self):
         self.id_var.set("")

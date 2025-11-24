@@ -357,6 +357,39 @@ class ReservaDAO:
         finally:
             conn.close()
 
+    def eliminar_reservas_finalizadas(self, fecha_hoy, id_estado_confirmada):
+        """
+        Elimina reservas confirmadas con fecha anterior a hoy.
+        También libera los slots en horarios_x_canchas.
+        """
+        conn = obtener_conexion_bd()
+        cursor = conn.cursor()
+
+        # buscamos las reservas a eliminar
+        cursor.execute("""
+            SELECT id_reserva
+            FROM reservas
+            WHERE fecha < ? AND id_estado_reserva = ?
+        """, (fecha_hoy, id_estado_confirmada))
+        filas = cursor.fetchall()
+        ids_reservas = [row["id_reserva"] for row in filas]
+
+        # liberamos los slots de cada reserva
+        if ids_reservas:
+            hxc_dao = HorariosXCanchasDAO()
+            for res_id in ids_reservas:
+                hxc_dao.eliminar_por_reserva(res_id)
+
+            # eliminamos las reservas
+            cursor.execute("""
+                DELETE FROM reservas
+                WHERE fecha < ? AND id_estado_reserva = ?
+            """, (fecha_hoy, id_estado_confirmada))
+
+        conn.commit()
+        conn.close()
+
+
 
 class TorneoDAO:
     def crear(self, torneo: Torneo):

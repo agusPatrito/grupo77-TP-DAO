@@ -153,3 +153,7 @@ class ReservationService:
 
         nuevo_id = self.cliente_dao.crear(nuevo_cliente)
         return nuevo_id
+    
+    def eliminar_reservas_finalizadas(self):
+        hoy_str = datetime.date.today().strftime('%Y-%m-%d')
+        self.reserva_dao.eliminar_reservas_finalizadas(hoy_str, self.id_estado_confirmada)
