@@ -1,5 +1,5 @@
 from dao import ReservaDAO, CanchaDAO, ClienteDAO, HorariosDAO, EstadosReservaDAO, HorariosXCanchasDAO
-from models import Reserva, HorariosXCanchas
+from models import Reserva, HorariosXCanchas, Cliente
 from services.court_service import CourtService
 import datetime
 
@@ -117,3 +117,19 @@ class ReservationService:
         # el DAO de Reserva ya maneja la liberacion de slots para las reservas canceladas
         self.reserva_dao.eliminar_reservas_por_estado(id_cancelada)
 
+    def agregar_cliente(self, nombre, apellido):
+        """
+        Crea un cliente nuevo con DNI temporal y devuelve su id_cliente.
+        """
+        # DNI temporal único, solo para cumplir el NOT NULL + UNIQUE
+        dni_temp = f"tmp-{datetime.datetime.now().timestamp()}"
+
+        nuevo_cliente = Cliente(
+            id_cliente=None,
+            nombre=nombre,
+            apellido=apellido,
+            dni=dni_temp
+        )
+
+        nuevo_id = self.cliente_dao.crear(nuevo_cliente)
+        return nuevo_id

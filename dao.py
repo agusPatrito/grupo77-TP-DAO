@@ -9,10 +9,14 @@ class ClienteDAO:
     def crear(self, cliente: Cliente):
         conn = obtener_conexion_bd()
         cursor = conn.cursor()
-        cursor.execute("INSERT INTO clientes (nombre, apellido, dni) VALUES (?, ?, ?)",
-                       (cliente.nombre, cliente.apellido, cliente.dni))
+        cursor.execute(
+            "INSERT INTO clientes (nombre, apellido, dni) VALUES (?, ?, ?)",
+            (cliente.nombre, cliente.apellido, cliente.dni)
+        )
+        nuevo_id = cursor.lastrowid
         conn.commit()
         conn.close()
+        return nuevo_id
 
     def obtener_todos(self):
         conn = obtener_conexion_bd()
