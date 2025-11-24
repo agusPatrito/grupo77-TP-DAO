@@ -40,53 +40,73 @@ class ReservationService:
                 horarios_libres.append(horario)
         return horarios_libres
 
+   # reservation_service.py (parte de class ReservationService)
+
     def agregar_reserva(self, id_cliente, id_cancha, fecha, hora_inicio, duracion, monto):
         if not all([id_cliente, id_cancha, fecha, hora_inicio, duracion, monto]):
             raise ValueError("Todos los campos son obligatorios")
 
         duracion_float = float(duracion)
-        hora_inicio_int = int(hora_inicio.split(':')[0])
-
-        # validacion: verificar si los slots estan disponibles usando HorariosXCanchasDAO
-        # identificamos todos los slots de 1 hora que abarca la reserva
-        slots_a_ocupar_ids = []
         hora_actual_dt = datetime.datetime.strptime(hora_inicio, '%H:%M').time()
+
+        # verifico existencia de horarios base y calculo ids de los slots que corresponderian
+        slots_a_ocupar_ids = []
         for _ in range(int(duracion_float)):
             horario_obj = self.horarios_dao.obtener_por_hora_inicio(hora_actual_dt.strftime('%H:%M'))
             if not horario_obj:
                 raise ValueError(f"Horario base {hora_actual_dt.strftime('%H:%M')} no encontrado")
-            
-            # verificamos ocupacion solo para reservas confirmadas
-            if self.horarios_x_canchas_dao.verificar_ocupacion(id_cancha, horario_obj.id_horario, fecha, self.id_estado_confirmada):
-                raise ValueError(f"El slot {hora_actual_dt.strftime('%H:%M')} ya esta ocupado por una reserva confirmada")
-            
             slots_a_ocupar_ids.append(horario_obj.id_horario)
             hora_actual_dt = (datetime.datetime.combine(datetime.date.min, hora_actual_dt) + datetime.timedelta(hours=1)).time()
 
-
-        # obtener detalles de la cancha para verificar la luz
         cancha = self.servicio_cancha.obtener_cancha_por_id(id_cancha)
         if not cancha:
             raise ValueError("Cancha no encontrada")
-
-        # validacion: verificar luz para reservas nocturnas
+        hora_inicio_int = int(hora_inicio.split(':')[0])
         hora_fin = hora_inicio_int + duracion_float
         if not cancha.tiene_luz and hora_fin > 18:
             raise ValueError(f"Una reserva de {duracion} hs desde las {hora_inicio} en una cancha sin luz excede el horario permitido (18:00)")
 
-        # creamos la reserva con estado Confirmada
+        # CREAR la reserva con estado PENDIENTE (no confirmada) -> no ocupamos slots ahora
         nueva_reserva = Reserva(id_reserva=None, id_cliente=id_cliente, id_cancha=id_cancha,
-                                id_estado_reserva=self.id_estado_confirmada, # Usamos el ID de Confirmada
+                                id_estado_reserva=self.id_estado_pendiente, # ahora Pendiente
                                 fecha=fecha, hora_inicio=hora_inicio, duracion_horas=duracion_float,
                                 monto_total=float(monto))
-        
+
         id_reserva_creada = self.reserva_dao.crear(nueva_reserva)
 
-        # ocupamos los slots correspondientes en horarios_x_canchas
-        for id_horario_slot in slots_a_ocupar_ids:
-            hxc = HorariosXCanchas(id_horarios_x_canchas=None, id_cancha=id_cancha, 
-                                   id_horario=id_horario_slot, id_reserva=id_reserva_creada, fecha=fecha)
-            self.horarios_x_canchas_dao.crear(hxc)
+        # opcional: retornar el id y/o la lista de slots esperados (para mostrar en UI)
+        return id_reserva_creada
+    
+    def confirmar_pago(self, id_reserva):
+        reserva = self.reserva_dao.obtener_reserva_por_id(id_reserva)
+        if not reserva:
+            raise ValueError("La reserva no existe.")
+
+        if reserva.id_estado_reserva != self.id_estado_pendiente:
+            raise ValueError("Solo se pueden confirmar reservas en estado Pendiente.")
+
+        # Recalculo los slots a partir de la reserva (hora_inicio y duracion)
+        hora_actual_dt = datetime.datetime.strptime(reserva.hora_inicio, '%H:%M').time()
+        slots_a_ocupar_ids = []
+        for _ in range(int(reserva.duracion_horas)):
+            horario_obj = self.horarios_dao.obtener_por_hora_inicio(hora_actual_dt.strftime('%H:%M'))
+            if not horario_obj:
+                raise ValueError(f"Horario base {hora_actual_dt.strftime('%H:%M')} no encontrado")
+            # Chequeo ocupación por reservas CONFIRMADAS
+            if self.horarios_x_canchas_dao.verificar_ocupacion(reserva.id_cancha, horario_obj.id_horario, reserva.fecha, self.id_estado_confirmada):
+                raise ValueError(f"El slot {hora_actual_dt.strftime('%H:%M')} ya fue ocupado por otra reserva confirmada. No se pudo confirmar.")
+            slots_a_ocupar_ids.append(horario_obj.id_horario)
+            hora_actual_dt = (datetime.datetime.combine(datetime.date.min, hora_actual_dt) + datetime.timedelta(hours=1)).time()
+
+        # Aquí podemos simular el pago (ej: llamada a pasarela). Lo simulamos con un print/log.
+        print("Simulando pago online... (aqui iría la llamada real)")
+
+        # Usamos el metodo atomic del DAO para actualizar estado y crear horarios_x_canchas
+        self.reserva_dao.confirmar_reserva_con_slots(id_reserva, self.id_estado_confirmada, reserva.id_cancha, reserva.fecha, slots_a_ocupar_ids)
+
+        return True
+
+
 
 
     def cancelar_reserva(self, id_reserva):

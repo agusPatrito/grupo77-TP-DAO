@@ -90,11 +90,12 @@ class VistaReservas(ctk.CTkFrame):
 
         frame_botones = ctk.CTkFrame(frame_formulario)
         frame_botones.pack(fill="x", padx=10, pady=15)
-        frame_botones.grid_columnconfigure((0, 1, 2), weight=1)
+        frame_botones.grid_columnconfigure((0, 1, 2, 3), weight=1)
 
-        ctk.CTkButton(frame_botones, text="Agregar Reserva", command=self.agregar_reserva, font=FUENTE_BASE).grid(row=0, column=0, padx=5)
-        ctk.CTkButton(frame_botones, text="Cancelar Reserva", command=self.cancelar_reserva, font=FUENTE_BASE).grid(row=0, column=1, padx=5)
-        ctk.CTkButton(frame_botones, text="Limpiar", command=self.limpiar_formulario, font=FUENTE_BASE).grid(row=0, column=2, padx=5)
+        ctk.CTkButton(frame_botones, text="Agregar", command=self.agregar_reserva, font=FUENTE_BASE).grid(row=0, column=0, padx=5)
+        ctk.CTkButton(frame_botones, text="Confirmar", command=self.confirmar_pago, font=FUENTE_BASE).grid(row=0, column=1, padx=5)
+        ctk.CTkButton(frame_botones, text="Cancelar", command=self.cancelar_reserva, font=FUENTE_BASE).grid(row=0, column=2, padx=5)
+        ctk.CTkButton(frame_botones, text="Limpiar", command=self.limpiar_formulario, font=FUENTE_BASE).grid(row=0, column=3, padx=5)
 
         # frame de la tabla (derecha)
         frame_tabla = ctk.CTkFrame(self.frame_principal)
@@ -280,6 +281,26 @@ class VistaReservas(ctk.CTkFrame):
                 self.refrescar_datos()
             except Exception as e:
                 mostrar_mensaje_personalizado(self.controller, "Error", str(e), tipo="error")
+    
+    def confirmar_pago(self):
+        item_seleccionado = self.arbol.focus()
+        if not item_seleccionado:
+            mostrar_mensaje_personalizado(self.controller, "Advertencia", "Seleccione una reserva para confirmar pago", tipo="warning")
+            return
+
+        respuesta = mostrar_mensaje_personalizado(self.controller, "Confirmar Pago", "¿Simular pago y confirmar esta reserva?", tipo="question")
+        if not respuesta:
+            return
+
+        try:
+            item = self.arbol.item(item_seleccionado)['values']
+            id_reserva = item[0]
+            self.servicio.confirmar_pago(id_reserva)
+            mostrar_mensaje_personalizado(self.controller, "Éxito", "Reserva confirmada y paga", tipo="info")
+            self.refrescar_datos()
+        except Exception as e:
+            mostrar_mensaje_personalizado(self.controller, "Error", f"No se pudo confirmar el pago: {e}", tipo="error")
+
 
     def eliminar_reservas_canceladas(self):
         respuesta = mostrar_mensaje_personalizado(self.controller, "Confirmar Eliminacion", 
