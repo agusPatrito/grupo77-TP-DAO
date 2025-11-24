@@ -15,11 +15,11 @@ def crear_tablas():
     
     # eliminamos tablas para empezar de cero en cada ejecucion (solo para desarrollo)
     cursor.execute("DROP TABLE IF EXISTS detalle_torneo_reserva;")
-    cursor.execute("DROP TABLE IF EXISTS torneos;")
     cursor.execute("DROP TABLE IF EXISTS horarios_x_canchas;")
     cursor.execute("DROP TABLE IF EXISTS reservas;")
     cursor.execute("DROP TABLE IF EXISTS horarios;")
     cursor.execute("DROP TABLE IF EXISTS estados_reserva;")
+    cursor.execute("DROP TABLE IF EXISTS torneos;")
     cursor.execute("DROP TABLE IF EXISTS canchas;")
     cursor.execute("DROP TABLE IF EXISTS clientes;")
 
@@ -87,6 +87,26 @@ def crear_tablas():
             UNIQUE (id_cancha, id_horario, fecha)
         );
     """)
+
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS torneos (
+            id_torneo INTEGER PRIMARY KEY AUTOINCREMENT,
+            nombre TEXT NOT NULL,
+            fecha_inicio TEXT NOT NULL,  -- formato YYYY-MM-DD
+            fecha_fin TEXT NOT NULL      -- formato YYYY-MM-DD
+            );
+    """)
+
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS detalle_torneo_reserva (
+            id_torneo INTEGER NOT NULL,
+            id_reserva INTEGER NOT NULL,
+            PRIMARY KEY (id_torneo, id_reserva),
+            FOREIGN KEY (id_torneo) REFERENCES torneos (id_torneo),
+            FOREIGN KEY (id_reserva) REFERENCES reservas (id_reserva)
+        );
+    """)
+
     
     conn.commit()
     conn.close()

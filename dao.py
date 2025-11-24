@@ -248,6 +248,31 @@ class ReservaDAO:
             ORDER BY total_reservas DESC
         """)
         return cursor.fetchall()
+    
+    def obtener_reservas_por_rango(self, fecha_desde, fecha_hasta):
+        """
+        Devuelve reservas entre dos fechas, con info de cliente, cancha y estado.
+        """
+        conn = obtener_conexion_bd()
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT r.id_reserva,
+                   cl.nombre || ' ' || cl.apellido AS cliente,
+                   ca.nombre                        AS cancha,
+                   r.fecha,
+                   r.hora_inicio,
+                   r.duracion_horas,
+                   es.nombre_estado                 AS estado
+            FROM reservas r
+            JOIN clientes cl        ON r.id_cliente = cl.id_cliente
+            JOIN canchas ca         ON r.id_cancha  = ca.id_cancha
+            JOIN estados_reserva es ON r.id_estado_reserva = es.id_estado_reserva
+            WHERE r.fecha BETWEEN ? AND ?
+            ORDER BY r.fecha, r.hora_inicio
+        """, (fecha_desde, fecha_hasta))
+        filas = cursor.fetchall()
+        conn.close()
+        return filas
 
     def reporte_utilizacion_mensual(self):
         conn = obtener_conexion_bd()
@@ -261,4 +286,104 @@ class ReservaDAO:
         """)
         return cursor.fetchall()
 
-# las clases DAO para Torneo, DetalleTorneoReserva pueden añadirse aqui
+class TorneoDAO:
+    def crear(self, torneo: Torneo):
+        conn = obtener_conexion_bd()
+        cursor = conn.cursor()
+        cursor.execute("""
+            INSERT INTO torneos (nombre, fecha_inicio, fecha_fin)
+            VALUES (?, ?, ?)
+        """, (torneo.nombre, torneo.fecha_inicio, torneo.fecha_fin))
+        torneo_id = cursor.lastrowid
+        conn.commit()
+        conn.close()
+        return torneo_id
+
+    def obtener_todos(self):
+        conn = obtener_conexion_bd()
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT * FROM torneos
+            ORDER BY fecha_inicio DESC
+        """)
+        torneos_data = cursor.fetchall()
+        conn.close()
+        return [Torneo(**data) for data in torneos_data]
+
+    def obtener_por_id(self, id_torneo):
+        conn = obtener_conexion_bd()
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM torneos WHERE id_torneo = ?", (id_torneo,))
+        data = cursor.fetchone()
+        conn.close()
+        return Torneo(**data) if data else None
+
+    def actualizar(self, torneo: Torneo):
+        conn = obtener_conexion_bd()
+        cursor = conn.cursor()
+        cursor.execute("""
+            UPDATE torneos
+            SET nombre = ?, fecha_inicio = ?, fecha_fin = ?
+            WHERE id_torneo = ?
+        """, (torneo.nombre, torneo.fecha_inicio, torneo.fecha_fin, torneo.id_torneo))
+        conn.commit()
+        conn.close()
+
+    def eliminar(self, id_torneo):
+        # primero borro sus relaciones con reservas
+        conn = obtener_conexion_bd()
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM detalle_torneo_reserva WHERE id_torneo = ?", (id_torneo,))
+        cursor.execute("DELETE FROM torneos WHERE id_torneo = ?", (id_torneo,))
+        conn.commit()
+        conn.close()
+
+
+class DetalleTorneoReservaDAO:
+    def agregar_reserva_a_torneo(self, id_torneo, id_reserva):
+        conn = obtener_conexion_bd()
+        cursor = conn.cursor()
+        cursor.execute("""
+            INSERT OR IGNORE INTO detalle_torneo_reserva (id_torneo, id_reserva)
+            VALUES (?, ?)
+        """, (id_torneo, id_reserva))
+        conn.commit()
+        conn.close()
+
+    def quitar_reserva_de_torneo(self, id_torneo, id_reserva):
+        conn = obtener_conexion_bd()
+        cursor = conn.cursor()
+        cursor.execute("""
+            DELETE FROM detalle_torneo_reserva
+            WHERE id_torneo = ? AND id_reserva = ?
+        """, (id_torneo, id_reserva))
+        conn.commit()
+        conn.close()
+
+    def obtener_reservas_de_torneo(self, id_torneo):
+        """
+        Devuelve las reservas asociadas a un torneo con info útil
+        (cliente, cancha, fecha, hora, estado).
+        """
+        conn = obtener_conexion_bd()
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT r.id_reserva,
+                   cl.nombre || ' ' || cl.apellido AS cliente,
+                   ca.nombre                        AS cancha,
+                   r.fecha,
+                   r.hora_inicio,
+                   r.duracion_horas,
+                   es.nombre_estado                 AS estado
+            FROM detalle_torneo_reserva dtr
+            JOIN reservas r         ON dtr.id_reserva = r.id_reserva
+            JOIN clientes cl        ON r.id_cliente   = cl.id_cliente
+            JOIN canchas ca         ON r.id_cancha    = ca.id_cancha
+            JOIN estados_reserva es ON r.id_estado_reserva = es.id_estado_reserva
+            WHERE dtr.id_torneo = ?
+            ORDER BY r.fecha, r.hora_inicio
+        """, (id_torneo,))
+        data = cursor.fetchall()
+        conn.close()
+        return data
+
