@@ -7,3 +7,5 @@
 - Caranta Pablo
 - Soria Bautista
 
+# Para correr el archivo:
+# .\.venv\Scripts\python.exe main.py

@@ -5,6 +5,8 @@ from gui.courts_view import VistaCanchas
 from gui.reservations_view import VistaReservas
 from gui.reporting_view import VistaReportes # Importar la nueva vista
 from gui.estilos import FUENTE_BOTON_MENU, FUENTE_TITULO_APP, FUENTE_ESLOGAN # importamos las fuentes
+from gui.tournaments_view import VistaTorneos
+
 
 class VentanaPrincipal(ctk.CTk):
     def __init__(self):
@@ -73,10 +75,15 @@ class VentanaPrincipal(ctk.CTk):
                                      command=lambda: self.mostrar_vista("vista_reservas"))
         btn_reservas.grid(row=3, column=0, pady=15)
 
+        btn_torneos = ctk.CTkButton(frame_botones_menu, text="Gestionar Torneos", image=None,
+                                     compound="top", height=120, width=220, font=FUENTE_BOTON_MENU,
+                                     command=lambda: self.mostrar_vista("vista_torneos"))
+        btn_torneos.grid(row=4, column=0, pady=15)
+
         btn_reportes = ctk.CTkButton(frame_botones_menu, text="Ver Reportes", image=self.img_reportes,
                                      compound="top", height=120, width=220, font=FUENTE_BOTON_MENU,
                                      command=lambda: self.mostrar_vista("vista_reportes"))
-        btn_reportes.grid(row=4, column=0, pady=15)
+        btn_reportes.grid(row=5, column=0, pady=15)
 
         # linea separadora (columna 1)
         linea_separadora = ctk.CTkFrame(menu_frame, width=2, fg_color="gray50") # linea delgada gris
@@ -114,6 +121,7 @@ class VentanaPrincipal(ctk.CTk):
         self.vistas["vista_canchas"] = VistaCanchas(self.contenedor, self)
         self.vistas["vista_reservas"] = VistaReservas(self.contenedor, self)
         self.vistas["vista_reportes"] = VistaReportes(self.contenedor, self) # Registrar la nueva vista
+        self.vistas["vista_torneos"] = VistaTorneos(self.contenedor, self) # Registrar la vista de torneos
 
     def mostrar_vista(self, nombre_vista):
         # muestra la pantalla que le pedimos y esconde las demas
