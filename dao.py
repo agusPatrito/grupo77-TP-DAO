@@ -128,6 +128,38 @@ class EstadosReservaDAO: # Nueva clase
         estado_data = cursor.fetchone()
         conn.close()
         return EstadosReserva(**estado_data) if estado_data else None
+    
+def confirmar_pago(self, id_reserva):
+    # Obtener la reserva
+    reserva = self.obtener_reserva_por_id(id_reserva)
+    if not reserva:
+        raise ValueError("La reserva no existe.")
+
+    # Obtener estados
+    estado_confirmada = self.obtener_id_estado_por_nombre("Confirmada")
+    estado_pendiente = self.obtener_id_estado_por_nombre("Pendiente")
+
+    # Validar que la reserva esté pendiente
+    if reserva.id_estado_reserva != estado_pendiente:
+        raise ValueError("Solo se pueden pagar reservas en estado Pendiente.")
+
+    # Simulación del pago
+    print("Procesando pago simulado...")
+
+    # Actualizar estado a Confirmada
+    conn = obtener_conexion_bd()
+    cursor = conn.cursor()
+    cursor.execute("""
+        UPDATE reserva
+        SET id_estado_reserva = ?
+        WHERE id_reserva = ?
+    """, (estado_confirmada, id_reserva))
+    conn.commit()
+    conn.close()
+
+    return True
+
+
 
 class HorariosXCanchasDAO: # Nueva clase
     def crear(self, hxc: HorariosXCanchas):

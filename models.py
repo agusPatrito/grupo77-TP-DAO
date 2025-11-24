@@ -54,3 +54,5 @@ class DetalleTorneoReserva: # Renombrada de DetalleTorneoCancha
     def __init__(self, id_torneo, id_reserva):
         self.id_torneo = id_torneo
         self.id_reserva = id_reserva
+
+

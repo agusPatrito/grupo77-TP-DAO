@@ -45,10 +45,12 @@ class VistaReservas(ctk.CTkFrame):
         self.frame_principal.grid_columnconfigure(1, weight=1) # tabla con peso 1
         self.frame_principal.grid_rowconfigure(0, weight=1)
 
+
         # frame del formulario (izquierda)
-        frame_formulario = ctk.CTkFrame(self.frame_principal, width=300) # ancho fijo para el formulario
-        frame_formulario.grid(row=0, column=0, padx=20, pady=20, sticky="ns") # se pega arriba y abajo, pero no se estira horizontalmente
+        frame_formulario = ctk.CTkScrollableFrame(self.frame_principal, width=380)
+        frame_formulario.grid(row=0, column=0, padx=20, pady=20, sticky="ns")
         frame_formulario.grid_columnconfigure(0, weight=1)
+
 
         # campos del formulario
         self.id_var = ctk.StringVar()
@@ -300,3 +302,7 @@ class VistaReservas(ctk.CTkFrame):
         self.monto_var.set("0.00")
         self.combo_hora.configure(values=[])
         self.calendario.selection_set(datetime.date.today())
+    
+
+
+    

@@ -116,3 +116,4 @@ class ReservationService:
         
         # el DAO de Reserva ya maneja la liberacion de slots para las reservas canceladas
         self.reserva_dao.eliminar_reservas_por_estado(id_cancelada)
+
