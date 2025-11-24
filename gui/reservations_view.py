@@ -82,7 +82,8 @@ class VistaReservas(ctk.CTkFrame):
             frame_formulario,
             variable=self.cancha_var,
             command=self.al_cambiar_cancha_o_duracion,
-            font=FUENTE_BASE
+            font=FUENTE_BASE,
+            state="readonly"
         )
         self.combo_cancha.pack(fill="x", padx=10)
 
@@ -107,7 +108,8 @@ class VistaReservas(ctk.CTkFrame):
             variable=self.duracion_var,
             values=["1", "2", "3", "4"],
             command=self.al_cambiar_cancha_o_duracion,
-            font=FUENTE_BASE
+            font=FUENTE_BASE,
+            state="readonly"
         )
         self.combo_duracion.pack(fill="x", padx=10)
 

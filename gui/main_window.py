@@ -4,7 +4,7 @@ from gui.clients_view import VistaClientes
 from gui.courts_view import VistaCanchas
 from gui.reservations_view import VistaReservas
 from gui.reporting_view import VistaReportes # Importar la nueva vista
-from gui.estilos import FUENTE_BOTON_MENU, FUENTE_TITULO_APP, FUENTE_ESLOGAN # importamos las fuentes
+from gui.estilos import FUENTE_BASE, FUENTE_BOTON_MENU, FUENTE_TITULO_APP, FUENTE_ESLOGAN # importamos las fuentes
 from gui.tournaments_view import VistaTorneos
 
 
@@ -49,9 +49,10 @@ class VentanaPrincipal(ctk.CTk):
             self.img_reservas = ctk.CTkImage(Image.open("gui/assets/reservas.png"), size=(48, 48))
             self.img_reportes = ctk.CTkImage(Image.open("gui/assets/reportes.png"), size=(48, 48)) # Nuevo icono
             self.img_logo = ctk.CTkImage(Image.open("gui/assets/logo.png"), size=(200, 200)) # tamaño para el logo
+            self.img_torneos = ctk.CTkImage(Image.open("gui/assets/trofeo.png"), size=(48, 48))
         except Exception as e:
             print(f"Error al cargar imagenes: {e}")
-            self.img_clientes = self.img_canchas = self.img_reservas = self.img_reportes = self.img_logo = None
+            self.img_clientes = self.img_canchas = self.img_reservas = self.img_reportes = self.img_logo = self.img_torneos = None
 
         # contenedor para los botones (columna 0)
         frame_botones_menu = ctk.CTkFrame(menu_frame, fg_color="transparent")
@@ -75,10 +76,10 @@ class VentanaPrincipal(ctk.CTk):
                                      command=lambda: self.mostrar_vista("vista_reservas"))
         btn_reservas.grid(row=3, column=0, pady=15)
 
-        btn_torneos = ctk.CTkButton(frame_botones_menu, text="Gestionar Torneos", image=None,
-                                     compound="top", height=120, width=220, font=FUENTE_BOTON_MENU,
-                                     command=lambda: self.mostrar_vista("vista_torneos"))
-        btn_torneos.grid(row=4, column=0, pady=15)
+        btn_torneo = ctk.CTkButton(frame_botones_menu, text=" Torneos", image=self.img_torneos, 
+                                   compound="top", font=FUENTE_BOTON_MENU, width=220, height=120,
+                                   command=lambda: self.mostrar_vista("vista_torneos"))
+        btn_torneo.grid(row=4, column=0, pady=15)
 
         btn_reportes = ctk.CTkButton(frame_botones_menu, text="Ver Reportes", image=self.img_reportes,
                                      compound="top", height=120, width=220, font=FUENTE_BOTON_MENU,
