@@ -321,6 +321,42 @@ class ReservaDAO:
             ORDER BY mes
         """)
         return cursor.fetchall()
+    
+    def confirmar_reserva_con_slots(self, id_reserva, id_estado_confirmada, id_cancha, fecha, lista_id_horarios):
+        """
+        Marca la reserva como confirmada y crea los registros en horarios_x_canchas
+        en una misma transaccion/conn para evitar inconsistencias.
+        lista_id_horarios: lista de id_horario que ocupan la reserva
+        """
+        conn = obtener_conexion_bd()
+        try:
+            cursor = conn.cursor()
+            # Verifico que la reserva exista y este en estado Pendiente (se puede ajustar)
+            cursor.execute("SELECT id_estado_reserva FROM reservas WHERE id_reserva = ?", (id_reserva,))
+            row = cursor.fetchone()
+            if not row:
+                raise ValueError("Reserva no encontrada.")
+            # Actualizo estado
+            cursor.execute("""
+                UPDATE reservas
+                SET id_estado_reserva = ?
+                WHERE id_reserva = ?
+            """, (id_estado_confirmada, id_reserva))
+
+            # Inserto los slots en horarios_x_canchas
+            for id_horario in lista_id_horarios:
+                cursor.execute("""
+                    INSERT INTO horarios_x_canchas (id_cancha, id_horario, id_reserva, fecha)
+                    VALUES (?, ?, ?, ?)
+                """, (id_cancha, id_horario, id_reserva, fecha))
+
+            conn.commit()
+        except Exception:
+            conn.rollback()
+            raise
+        finally:
+            conn.close()
+
 
 class TorneoDAO:
     def crear(self, torneo: Torneo):
