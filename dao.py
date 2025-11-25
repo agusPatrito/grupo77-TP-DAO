@@ -258,12 +258,10 @@ class ReservaDAO:
     def eliminar_reservas_por_estado(self, id_estado_reserva):
         conn = obtener_conexion_bd()
         cursor = conn.cursor()
-        # primero obtenemos los id_reserva de las reservas con ese estado
         cursor.execute("SELECT id_reserva FROM reservas WHERE id_estado_reserva = ?", (id_estado_reserva,))
         ids_reservas_a_eliminar = [row['id_reserva'] for row in cursor.fetchall()]
 
         if ids_reservas_a_eliminar:
-            # eliminamos los slots asociados a estas reservas
             for res_id in ids_reservas_a_eliminar:
                 HorariosXCanchasDAO().eliminar_por_reserva(res_id) # Usamos el DAO de HorariosXCanchas
             # ahora si eliminamos las reservas
@@ -271,6 +269,40 @@ class ReservaDAO:
         
         conn.commit()
         conn.close()
+
+    def existe_reserva_conflictiva(self, id_cancha, fecha, hora_inicio_str, duracion_horas, id_estado_cancelada=None):
+
+        start = int(hora_inicio_str.split(":", 1)[0])
+        try:
+            dur = int(duracion_horas)
+        except Exception:
+            dur = int(float(duracion_horas))
+        end = start + dur
+
+        conn = obtener_conexion_bd()
+        cursor = conn.cursor()
+
+        if id_estado_cancelada is None:
+            cursor.execute("""
+                SELECT 1 FROM reservas
+                WHERE id_cancha = ? AND fecha = ?
+                AND (CAST(substr(hora_inicio,1,2) AS INTEGER) < ?)
+                AND ((CAST(substr(hora_inicio,1,2) AS INTEGER) + duracion_horas) > ?)
+                LIMIT 1
+            """, (id_cancha, fecha, end, start))
+        else:
+            cursor.execute("""
+                SELECT 1 FROM reservas
+                WHERE id_cancha = ? AND fecha = ? AND id_estado_reserva != ?
+                AND (CAST(substr(hora_inicio,1,2) AS INTEGER) < ?)
+                AND ((CAST(substr(hora_inicio,1,2) AS INTEGER) + duracion_horas) > ?)
+                LIMIT 1
+            """, (id_cancha, fecha, id_estado_cancelada, end, start))
+
+        existe = cursor.fetchone() is not None
+        conn.close()
+        return existe
+
 
     def reporte_canchas_mas_utilizadas(self):
         conn = obtener_conexion_bd()

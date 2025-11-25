@@ -583,7 +583,7 @@ class VistaReservas(ctk.CTkFrame):
             mostrar_mensaje_personalizado(self.controller, "Advertencia", "Seleccione una reserva para confirmar pago", tipo="warning")
             return
 
-        respuesta = mostrar_mensaje_personalizado(self.controller, "Confirmar Pago", "¿Simular pago y confirmar esta reserva?", tipo="question")
+        respuesta = mostrar_mensaje_personalizado(self.controller, "Confirmar Pago", "¿Confirmar esta reserva?", tipo="question")
         if not respuesta:
             return
 

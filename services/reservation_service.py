@@ -89,6 +89,10 @@ class ReservationService:
         hora_fin = hora_inicio_int + duracion_float
         if not cancha.tiene_luz and hora_fin > 18:
             raise ValueError(f"Una reserva de {duracion} hs desde las {hora_inicio} en una cancha sin luz excede el horario permitido (18:00)")
+        
+        # antes de crear la reserva, verifico si hay reservas que se solapan
+        if self.reserva_dao.existe_reserva_conflictiva(id_cancha, fecha, hora_inicio, duracion_float, self.id_estado_cancelada):
+            raise ValueError(f"Ya existe otra reserva (pendiente o confirmada) para la cancha seleccionada el {fecha} que se solapa con {hora_inicio} durante {duracion_float} hs. No se puede crear otra reserva.")
 
         # CREAR la reserva con estado PENDIENTE (no confirmada) -> no ocupamos slots ahora
         nueva_reserva = Reserva(id_reserva=None, id_cliente=id_cliente, id_cancha=id_cancha,
@@ -97,6 +101,8 @@ class ReservationService:
                                 monto_total=float(monto))
 
         id_reserva_creada = self.reserva_dao.crear(nueva_reserva)
+        
+
 
         # opcional: retornar el id y/o la lista de slots esperados (para mostrar en UI)
         return id_reserva_creada
