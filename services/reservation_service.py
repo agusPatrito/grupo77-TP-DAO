@@ -187,3 +187,12 @@ class ReservationService:
     def eliminar_reservas_finalizadas(self):
         hoy_str = datetime.date.today().strftime('%Y-%m-%d')
         self.reserva_dao.eliminar_reservas_finalizadas(hoy_str, self.id_estado_confirmada)
+
+
+    def eliminar_reservas_confirmadas_pasadas(self):
+        """
+        Wrapper que calcula fecha/hora actuales y pide al DAO que elimine las confirmadas ya vencidas.
+        """
+        hoy_str = datetime.date.today().strftime('%Y-%m-%d')
+        hora_actual = datetime.datetime.now().hour
+        return self.reserva_dao.eliminar_reservas_confirmadas_pasadas(self.id_estado_confirmada, hoy_str, hora_actual)

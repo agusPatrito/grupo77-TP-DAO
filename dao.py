@@ -420,6 +420,33 @@ class ReservaDAO:
 
         conn.commit()
         conn.close()
+    
+    def eliminar_reservas_confirmadas_pasadas(self, id_estado_confirmada, fecha_hoy_str, hora_actual_int):
+        """
+        Elimina reservas cuyo estado es CONFIRMADA y ya han pasado:
+        - fecha < fecha_hoy_str
+        - OR (fecha == fecha_hoy_str AND hora_inicio + duracion_horas <= hora_actual_int)
+        Devuelve la cantidad de filas eliminadas.
+        """
+        conn = obtener_conexion_bd()
+        cursor = conn.cursor()
+        # substr(hora_inicio,1,2) -> "HH", lo casteamos a INTEGER para operar con horas
+        cursor.execute("""
+            DELETE FROM reservas
+            WHERE id_estado_reserva = ?
+            AND (
+                    fecha < ?
+                    OR (
+                        fecha = ?
+                        AND (CAST(substr(hora_inicio,1,2) AS INTEGER) + duracion_horas) <= ?
+                    )
+                )
+        """, (id_estado_confirmada, fecha_hoy_str, fecha_hoy_str, hora_actual_int))
+        afectadas = cursor.rowcount
+        conn.commit()
+        conn.close()
+        return afectadas
+
 
 
 

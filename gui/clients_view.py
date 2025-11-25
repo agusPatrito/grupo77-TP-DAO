@@ -3,6 +3,7 @@ from tkinter import ttk
 from PIL import Image
 from services.client_service import ClientService
 from gui.estilos import FUENTE_BASE, FUENTE_TITULO_VISTA, mostrar_mensaje_personalizado # importamos la funcion de mensaje
+import re
 
 class VistaClientes(ctk.CTkFrame):
     def __init__(self, parent, controller):
@@ -52,26 +53,36 @@ class VistaClientes(ctk.CTkFrame):
         self.nombre_var = ctk.StringVar()
         self.apellido_var = ctk.StringVar()
         self.dni_var = ctk.StringVar()
+        vcmd = (self.register(self._solo_letras), '%P')
+        vcmd_dni = (self.register(self._solo_dni), '%P')
+        self.dni_var.trace_add('write', self._on_dni_change)
+        self._on_dni_change()
+
 
         ctk.CTkLabel(frame_formulario, text="ID", font=FUENTE_BASE).pack(anchor="w", padx=10, pady=(10, 0))
         self.entrada_id = ctk.CTkEntry(frame_formulario, textvariable=self.id_var, state='disabled', font=FUENTE_BASE)
         self.entrada_id.pack(fill="x", padx=10)
 
         ctk.CTkLabel(frame_formulario, text="Nombre", font=FUENTE_BASE).pack(anchor="w", padx=10, pady=(10, 0))
-        ctk.CTkEntry(frame_formulario, textvariable=self.nombre_var, font=FUENTE_BASE).pack(fill="x", padx=10)
+        # ctk.CTkEntry(frame_formulario, textvariable=self.nombre_var, font=FUENTE_BASE).pack(fill="x", padx=10)
+        ctk.CTkEntry(frame_formulario, textvariable=self.nombre_var, font=FUENTE_BASE, validate='key', validatecommand=vcmd).pack(fill="x", padx=10)
 
         ctk.CTkLabel(frame_formulario, text="Apellido", font=FUENTE_BASE).pack(anchor="w", padx=10, pady=(10, 0))
-        ctk.CTkEntry(frame_formulario, textvariable=self.apellido_var, font=FUENTE_BASE).pack(fill="x", padx=10)
+        # ctk.CTkEntry(frame_formulario, textvariable=self.apellido_var, font=FUENTE_BASE).pack(fill="x", padx=10)
+        ctk.CTkEntry(frame_formulario, textvariable=self.apellido_var, font=FUENTE_BASE, validate='key', validatecommand=vcmd).pack(fill="x", padx=10)
 
         ctk.CTkLabel(frame_formulario, text="DNI", font=FUENTE_BASE).pack(anchor="w", padx=10, pady=(10, 0))
-        ctk.CTkEntry(frame_formulario, textvariable=self.dni_var, font=FUENTE_BASE).pack(fill="x", padx=10)
+        ctk.CTkEntry(frame_formulario, textvariable=self.dni_var, font=FUENTE_BASE, validate='key', validatecommand=vcmd_dni).pack(fill="x", padx=10)
 
         # botones del formulario
         frame_botones = ctk.CTkFrame(frame_formulario)
         frame_botones.pack(fill="x", padx=10, pady=20)
         frame_botones.grid_columnconfigure((0, 1, 2, 3), weight=1)
 
-        ctk.CTkButton(frame_botones, text="Agregar", command=self.agregar_cliente, font=FUENTE_BASE).grid(row=0, column=0, padx=5)
+        # ctk.CTkButton(frame_botones, text="Agregar", command=self.agregar_cliente, font=FUENTE_BASE).grid(row=0, column=0, padx=5)
+        self.btn_guardar = ctk.CTkButton(frame_botones, text="Agregar", command=self.agregar_cliente, font=FUENTE_BASE)
+        self.btn_guardar.grid(row=0, column=0, padx=5)
+        self.btn_guardar.configure(state="disabled")
         ctk.CTkButton(frame_botones, text="Actualizar", command=self.actualizar_cliente, font=FUENTE_BASE).grid(row=0, column=1, padx=5)
         ctk.CTkButton(frame_botones, text="Eliminar", command=self.eliminar_cliente, font=FUENTE_BASE).grid(row=0, column=2, padx=5)
         ctk.CTkButton(frame_botones, text="Limpiar", command=self.limpiar_formulario, font=FUENTE_BASE).grid(row=0, column=3, padx=5)
@@ -100,6 +111,29 @@ class VistaClientes(ctk.CTkFrame):
         self.arbol.bind("<<TreeviewSelect>>", self.al_seleccionar_cliente)
 
         self.cargar_clientes()
+
+    def _solo_letras(self, s):
+        return bool(re.match(r'^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]*$', s))
+    
+    def _solo_dni(self, valor_parcial: str) -> bool:
+        return bool(re.match(r'^\d{0,8}$', valor_parcial))
+    
+    def _on_dni_change(self, *args):
+        """
+        Callback: activa el botón de agregar solo si:
+        - dni son sólo dígitos
+        - longitud entre 7 y 8
+        - valor entero > 0
+        """
+        s = self.dni_var.get().strip()
+        valido = s.isdigit() and (7 <= len(s) <= 8) and int(s) > 0
+        try:
+            self.btn_guardar.configure(state="normal" if valido else "disabled")
+        except Exception:
+            # por si el botón aún no existe o el nombre es distinto
+            pass
+    
+    
 
     def cargar_clientes(self):
         for i in self.arbol.get_children():

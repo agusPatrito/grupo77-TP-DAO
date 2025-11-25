@@ -126,6 +126,7 @@ class VistaReservas(ctk.CTkFrame):
         ctk.CTkButton(frame_botones, text="Cancelar", command=self.cancelar_reserva, font=FUENTE_BASE).grid(row=0, column=2, padx=5)
         ctk.CTkButton(frame_botones, text="Limpiar", command=self.limpiar_formulario, font=FUENTE_BASE).grid(row=0, column=3, padx=5)
 
+
         # frame de la tabla (derecha)
         frame_tabla = ctk.CTkFrame(self.frame_principal)
         frame_tabla.grid(row=0, column=1, padx=20, pady=20, sticky="nsew")
@@ -150,6 +151,8 @@ class VistaReservas(ctk.CTkFrame):
         ctk.CTkRadioButton(frame_filtros, text="Confirmadas", variable=self.filtro_estado_var, value="Confirmada", command=self.cargar_reservas, font=FUENTE_BASE).pack(side="left", padx=5)
         ctk.CTkRadioButton(frame_filtros, text="Canceladas", variable=self.filtro_estado_var, value="Cancelada", command=self.cargar_reservas, font=FUENTE_BASE).pack(side="left", padx=5)
         ctk.CTkRadioButton(frame_filtros, text="Finalizadas", variable=self.filtro_estado_var, value="Finalizada", command=self.cargar_reservas, font=FUENTE_BASE).pack(side="left", padx=5)
+        
+
 
         ctk.CTkButton(
             frame_filtros,
@@ -172,6 +175,13 @@ class VistaReservas(ctk.CTkFrame):
             text="Refrescar Datos",
             command=self.refrescar_datos,
             font=FUENTE_BASE
+        ).pack(side="right", padx=5)
+
+        ctk.CTkButton(
+            frame_filtros,
+            text="Eliminar reservas pasadas",
+            command=self.eliminar_reservas_confirmadas_pasadas_ui,
+            width=200
         ).pack(side="right", padx=5)
 
         # ----- Filtro por fecha (fila 1) -----
@@ -656,3 +666,19 @@ class VistaReservas(ctk.CTkFrame):
         self.monto_var.set("0.00")
         self.combo_hora.configure(values=[])
         self.calendario.selection_set(datetime.date.today())
+
+    def eliminar_reservas_confirmadas_pasadas_ui(self):
+        """Handler del botón: elimina reservas confirmadas cuyo horario ya pasó."""
+        confirmar = mostrar_mensaje_personalizado(self.controller, "Eliminar reservas pasadas",
+                                                "¿Eliminar todas las reservas CONFIRMADAS cuyo horario ya pasó?", tipo="question")
+        if not confirmar:
+            return
+        try:
+            afectadas = self.servicio.eliminar_reservas_confirmadas_pasadas()
+            mostrar_mensaje_personalizado(self.controller, "Operación finalizada",
+                                        f"Se eliminaron {afectadas} reservas confirmadas pasadas.", tipo="info")
+            self.refrescar_datos()
+        except Exception as e:
+            mostrar_mensaje_personalizado(self.controller, "Error",
+                                        f"No se pudo eliminar reservas pasadas: {e}", tipo="error")
+
