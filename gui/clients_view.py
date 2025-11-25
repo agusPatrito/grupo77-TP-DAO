@@ -58,10 +58,11 @@ class VistaClientes(ctk.CTkFrame):
         self.dni_var.trace_add('write', self._on_dni_change)
         self._on_dni_change()
 
-
+        '''
         ctk.CTkLabel(frame_formulario, text="ID", font=FUENTE_BASE).pack(anchor="w", padx=10, pady=(10, 0))
         self.entrada_id = ctk.CTkEntry(frame_formulario, textvariable=self.id_var, state='disabled', font=FUENTE_BASE)
         self.entrada_id.pack(fill="x", padx=10)
+        '''
 
         ctk.CTkLabel(frame_formulario, text="Nombre", font=FUENTE_BASE).pack(anchor="w", padx=10, pady=(10, 0))
         # ctk.CTkEntry(frame_formulario, textvariable=self.nombre_var, font=FUENTE_BASE).pack(fill="x", padx=10)

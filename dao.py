@@ -551,3 +551,16 @@ class DetalleTorneoReservaDAO:
         conn.close()
         return data
 
+    def reserva_ya_asignada(self, id_reserva: int) -> bool:
+        """
+        Devuelve True si la reserva ya está asociada a algún torneo.
+        """
+        conn = obtener_conexion_bd()
+        cursor = conn.cursor()
+        cursor.execute(
+            "SELECT 1 FROM detalle_torneo_reserva WHERE id_reserva = ? LIMIT 1",
+            (id_reserva,)
+        )
+        existe = cursor.fetchone() is not None
+        conn.close()
+        return existe

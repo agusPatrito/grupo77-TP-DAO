@@ -53,9 +53,11 @@ class VistaCanchas(ctk.CTkFrame):
         self.luz_var = ctk.BooleanVar()
         self.tarifa_var = ctk.StringVar()
 
+        '''
         ctk.CTkLabel(frame_formulario, text="ID", font=FUENTE_BASE).pack(anchor="w", padx=10, pady=(10, 0))
         self.entrada_id = ctk.CTkEntry(frame_formulario, textvariable=self.id_var, state='disabled', font=FUENTE_BASE)
         self.entrada_id.pack(fill="x", padx=10)
+        '''
 
         ctk.CTkLabel(frame_formulario, text="Nombre", font=FUENTE_BASE).pack(anchor="w", padx=10, pady=(10, 0))
         ctk.CTkEntry(frame_formulario, textvariable=self.nombre_var, font=FUENTE_BASE).pack(fill="x", padx=10)

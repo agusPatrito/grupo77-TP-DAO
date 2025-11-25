@@ -175,6 +175,7 @@ class VistaTorneos(ctk.CTkFrame):
         self.id_reserva_var = ctk.StringVar()  # para agregar por ID si querés
 
         # ID
+        '''
         ctk.CTkLabel(
             frame_formulario,
             text="ID",
@@ -187,7 +188,8 @@ class VistaTorneos(ctk.CTkFrame):
             font=FUENTE_BASE
         )
         self.entrada_id.pack(fill="x", padx=10)
-
+        '''
+        
         # Nombre
         ctk.CTkLabel(
             frame_formulario,

@@ -68,9 +68,10 @@ class VistaReservas(ctk.CTkFrame):
         self.duracion_var = ctk.StringVar(value="1")
         self.monto_var = ctk.StringVar()
 
+        '''
         ctk.CTkLabel(frame_formulario, text="ID", font=FUENTE_BASE).pack(anchor="w", padx=10, pady=(5, 0))
         ctk.CTkEntry(frame_formulario, textvariable=self.id_var, state='disabled', font=FUENTE_BASE).pack(fill="x", padx=10)
-
+        '''
         ctk.CTkLabel(frame_formulario, text="Cliente", font=FUENTE_BASE).pack(anchor="w", padx=10, pady=(5, 0))
         self.combo_cliente = ctk.CTkComboBox(frame_formulario, variable=self.cliente_var, font=FUENTE_BASE)
         self.combo_cliente.pack(fill="x", padx=10)
@@ -153,14 +154,13 @@ class VistaReservas(ctk.CTkFrame):
         ctk.CTkRadioButton(frame_filtros, text="Finalizadas", variable=self.filtro_estado_var, value="Finalizada", command=self.cargar_reservas, font=FUENTE_BASE).pack(side="left", padx=5)
         
 
-
-        ctk.CTkButton(
+        '''ctk.CTkButton(
             frame_filtros,
             text="Eliminar Finalizadas",
             command=self.eliminar_reservas_finalizadas,
             font=FUENTE_BASE,
             fg_color="#FF8800"
-        ).pack(side="right", padx=5)
+        ).pack(side="right", padx=5)'''
 
         ctk.CTkButton(
             frame_filtros,
@@ -208,6 +208,15 @@ class VistaReservas(ctk.CTkFrame):
         ctk.CTkButton(frame_filtro_fecha, text="Quitar filtro",
                     command=self._limpiar_filtro_fecha,
                     font=FUENTE_BASE, width=110).grid(row=0, column=3, padx=5, pady=5)
+        
+        ctk.CTkButton(
+            frame_filtro_fecha,
+            text="Eliminar Finalizadas",
+            command=self.eliminar_reservas_finalizadas,
+            font=FUENTE_BASE,
+            fg_color="#FF8800",
+            width=150
+        ).grid(row=0, column=4, padx=5, pady=5, sticky="e")
 
         # === 3) FILTRO POR CANCHA (TERCERA FILA) ===
         frame_filtro_cancha = ctk.CTkFrame(frame_tabla)
