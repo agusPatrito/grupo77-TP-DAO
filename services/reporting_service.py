@@ -43,3 +43,10 @@ class ReportingService:
         totales = [row["total"] for row in data]
         return horas, totales
 
+    def get_reservas_por_cliente(self, id_cliente):
+        return self.reserva_dao.reporte_reservas_por_cliente(id_cliente)
+
+
+    def get_reservas_por_cancha_periodo(self, id_cancha, fecha_desde, fecha_hasta):
+        return self.reserva_dao.reporte_reservas_por_cancha_periodo(id_cancha, fecha_desde, fecha_hasta)
+

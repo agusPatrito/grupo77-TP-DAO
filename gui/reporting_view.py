@@ -6,6 +6,8 @@ from gui.estilos import FUENTE_BASE, FUENTE_TITULO_VISTA
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import matplotlib.pyplot as plt
+from gui.custom_messagebox import mostrar_mensaje_personalizado
+
 
 
 class VistaReportes(ctk.CTkFrame):
@@ -51,6 +53,12 @@ class VistaReportes(ctk.CTkFrame):
 
         self.tab_canchas = self.tabview.add("Uso de Canchas")
         self.tab_horarios = self.tabview.add("Reservas por Horario")
+        self.tab_cliente = self.tabview.add("Por Cliente")
+        self.tab_periodo = self.tabview.add("Por Cancha en Periodo")
+
+        self._construir_tab_reporte_cliente()
+        self._construir_tab_reporte_cancha_periodo()
+
 
         # ================================
         #   TAB 1 — USO DE CANCHAS
@@ -139,6 +147,244 @@ class VistaReportes(ctk.CTkFrame):
 
         self.frame_grafico_horas = ctk.CTkFrame(frame)
         self.frame_grafico_horas.grid(row=1, column=1, sticky="nsew", padx=10, pady=10)
+
+    # ------------------------------------------------------------------
+    #   TAB 3 — RESERVAS POR CLIENTE
+    # ------------------------------------------------------------------
+    def _construir_tab_reporte_cliente(self):
+
+        frame = self.tab_cliente
+        frame.grid_columnconfigure(0, weight=1)
+        frame.grid_rowconfigure(2, weight=1)
+
+        # selector cliente
+        ctk.CTkLabel(frame, text="Cliente:", font=FUENTE_BASE).grid(row=0, column=0, sticky="w", padx=10, pady=5)
+
+        from services.reservation_service import ReservationService
+        clientes = ReservationService().obtener_todos_los_clientes()
+
+        self.combo_cliente_reporte = ctk.CTkComboBox(
+            frame,
+            values=[f"{c.id_cliente} - {c.nombre} {c.apellido}" for c in clientes],
+            width=300
+        )
+        self.combo_cliente_reporte.grid(row=1, column=0, sticky="w", padx=10)
+
+        # botón actualizar clientes
+        ctk.CTkButton(
+            frame, text="Actualizar Clientes", font=FUENTE_BASE,
+            command=self._actualizar_lista_clientes
+        ).grid(row=1, column=1, padx=10)
+
+        # botón buscar
+        ctk.CTkButton(
+            frame, text="Buscar", font=FUENTE_BASE,
+            command=self._reporte_cliente_buscar
+        ).grid(row=1, column=2, padx=10)
+
+        # tabla resultados
+        self.tabla_cliente = ttk.Treeview(
+            frame,
+            columns=("ID", "Fecha", "Hora", "Duración", "Cancha", "Estado", "Monto"),
+            show="headings"
+        )
+        for col in self.tabla_cliente["columns"]:
+            self.tabla_cliente.heading(col, text=col)
+
+        self.tabla_cliente.grid(row=2, column=0, columnspan=2, sticky="nsew", padx=10, pady=10)
+
+    def _reporte_cliente_buscar(self):
+        item = self.combo_cliente_reporte.get()
+        if not item:
+            return
+        id_cliente = int(item.split(" - ")[0])
+
+        datos = self.servicio_reportes.get_reservas_por_cliente(id_cliente)
+
+        for x in self.tabla_cliente.get_children():
+            self.tabla_cliente.delete(x)
+
+        for row in datos:
+            self.tabla_cliente.insert("", "end", values=(
+                row["id_reserva"],
+                row["fecha"],
+                row["hora_inicio"],
+                row["duracion_horas"],
+                row["cancha"],
+                row["estado"],
+                row["monto_total"]
+            ))
+
+    def _actualizar_lista_clientes(self):
+        """Recarga la lista de clientes disponibles en el combo."""
+        from services.reservation_service import ReservationService
+
+        clientes = ReservationService().obtener_todos_los_clientes()
+
+        nuevos_valores = [
+            f"{c.id_cliente} - {c.nombre} {c.apellido}"
+            for c in clientes
+        ]
+
+        self.combo_cliente_reporte.configure(values=nuevos_valores)
+
+        # mensaje opcional
+        try:
+            from gui.custom_messagebox import mostrar_mensaje_personalizado
+            mostrar_mensaje_personalizado(
+                self.controller,
+                "Clientes Actualizados",
+                "La lista de clientes fue recargada correctamente.",
+                tipo="info"
+            )
+        except:
+            print("Clientes actualizados correctamente.")
+
+
+    # ------------------------------------------------------------------
+    #   TAB 4 — RESERVAS POR CANCHA EN PERÍODO 
+    # ------------------------------------------------------------------
+    def _construir_tab_reporte_cancha_periodo(self):
+
+        frame = self.tab_periodo
+        frame.grid_columnconfigure(0, weight=1)
+        frame.grid_rowconfigure(3, weight=1)
+
+        # cancha
+        ctk.CTkLabel(frame, text="Cancha:", font=FUENTE_BASE).grid(row=0, column=0, sticky="w", padx=10)
+
+        from services.court_service import CourtService
+        canchas = CourtService().obtener_todas_las_canchas()
+
+        self.combo_periodo_cancha = ctk.CTkComboBox(
+            frame,
+            values=[f"{c['id_cancha']} - {c['nombre']}" for c in canchas],
+            width=260
+        )
+        self.combo_periodo_cancha.grid(row=0, column=1, padx=10)
+
+        # fechas
+        ctk.CTkLabel(frame, text="Desde (YYYY-MM-DD):", font=FUENTE_BASE).grid(row=1, column=0, sticky="w", padx=10)
+        self.fecha_desde = ctk.CTkEntry(frame, width=150)
+        self.fecha_desde.grid(row=1, column=1, sticky="w")
+
+        ctk.CTkLabel(frame, text="Hasta (YYYY-MM-DD):", font=FUENTE_BASE).grid(row=2, column=0, sticky="w", padx=10)
+        self.fecha_hasta = ctk.CTkEntry(frame, width=150)
+        self.fecha_hasta.grid(row=2, column=1, sticky="w")
+
+        # botón buscar
+        ctk.CTkButton(
+            frame, text="Buscar", font=FUENTE_BASE,
+            command=self._reporte_cancha_periodo_buscar
+        ).grid(row=1, column=2, rowspan=2, padx=10)
+
+        # tabla
+        self.tabla_periodo = ttk.Treeview(
+            frame,
+            columns=("ID", "Cliente", "Fecha", "Hora", "Duración", "Estado", "Monto"),
+            show="headings"
+        )
+        for col in self.tabla_periodo["columns"]:
+            self.tabla_periodo.heading(col, text=col)
+
+        self.tabla_periodo.grid(row=3, column=0, columnspan=3, sticky="nsew", padx=10, pady=10)
+
+    def _validar_fecha(self, fecha_texto: str):
+        """Valida que la fecha sea YYYY-MM-DD y exista realmente."""
+        import datetime
+
+        if not fecha_texto:
+            return None  # vacía = no válida
+
+        try:
+            # Intenta parsear la fecha
+            fecha = datetime.datetime.strptime(fecha_texto, "%Y-%m-%d").date()
+            return fecha
+        except ValueError:
+            return None
+
+
+    def _reporte_cancha_periodo_buscar(self):
+
+        cancha = self.combo_periodo_cancha.get()
+        if not cancha:
+            mostrar_mensaje_personalizado(
+                self.controller,
+                "Error",
+                "Debe seleccionar una cancha.",
+                tipo="error"
+            )
+            return
+
+        id_cancha = int(cancha.split(" - ")[0])
+
+        # ------------------------------
+        # VALIDACIÓN DE FECHAS
+        # ------------------------------
+        desde_texto = self.fecha_desde.get().strip()
+        hasta_texto = self.fecha_hasta.get().strip()
+
+        # validar DESDE
+        fecha_desde = self._validar_fecha(desde_texto)
+        if fecha_desde is None:
+            mostrar_mensaje_personalizado(
+                self.controller,
+                "Error en fecha",
+                "La fecha 'Desde' es inválida.\nUse formato YYYY-MM-DD.",
+                tipo="error"
+            )
+            return
+
+        # validar HASTA
+        fecha_hasta = self._validar_fecha(hasta_texto)
+        if fecha_hasta is None:
+            mostrar_mensaje_personalizado(
+                self.controller,
+                "Error en fecha",
+                "La fecha 'Hasta' es inválida.\nUse formato YYYY-MM-DD.",
+                tipo="error"
+            )
+            return
+
+        # validar orden lógico
+        if fecha_desde > fecha_hasta:
+            mostrar_mensaje_personalizado(
+                self.controller,
+                "Rango inválido",
+                "La fecha 'Desde' no puede ser mayor que la fecha 'Hasta'.",
+                tipo="error"
+            )
+            return
+
+        # ------------------------------
+        # SI TODO OK → Ejecutar consulta
+        # ------------------------------
+        datos = self.servicio_reportes.get_reservas_por_cancha_periodo(
+            id_cancha,
+            fecha_desde.strftime("%Y-%m-%d"),
+            fecha_hasta.strftime("%Y-%m-%d"),
+        )
+
+        # limpiar tabla
+        for x in self.tabla_periodo.get_children():
+            self.tabla_periodo.delete(x)
+
+        # cargar resultados
+        for row in datos:
+            self.tabla_periodo.insert(
+                "",
+                "end",
+                values=(
+                    row["id_reserva"],
+                    row["cliente"],
+                    row["fecha"],
+                    row["hora_inicio"],
+                    row["duracion_horas"],
+                    row["estado"],
+                    row["monto_total"],
+                ),
+            )
+
 
     # ------------------------------------------------------------------
     #   CARGAR REPORTES EN AMBAS PESTAÑAS

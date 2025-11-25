@@ -481,7 +481,48 @@ class ReservaDAO:
         conn.close()
         return data
 
-
+    def reporte_reservas_por_cliente(self, id_cliente):
+        conn = obtener_conexion_bd()
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT r.id_reserva,
+                r.fecha,
+                r.hora_inicio,
+                r.duracion_horas,
+                c.nombre AS cancha,
+                es.nombre_estado AS estado,
+                r.monto_total
+            FROM reservas r
+            JOIN canchas c ON r.id_cancha = c.id_cancha
+            JOIN estados_reserva es ON r.id_estado_reserva = es.id_estado_reserva
+            WHERE r.id_cliente = ?
+            ORDER BY r.fecha DESC, r.hora_inicio DESC
+        """, (id_cliente,))
+        data = cursor.fetchall()
+        conn.close()
+        return data
+    
+    def reporte_reservas_por_cancha_periodo(self, id_cancha, fecha_desde, fecha_hasta):
+        conn = obtener_conexion_bd()
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT r.id_reserva,
+                cl.nombre || ' ' || cl.apellido AS cliente,
+                r.fecha,
+                r.hora_inicio,
+                r.duracion_horas,
+                es.nombre_estado AS estado,
+                r.monto_total
+            FROM reservas r
+            JOIN clientes cl ON r.id_cliente = cl.id_cliente
+            JOIN estados_reserva es ON r.id_estado_reserva = es.id_estado_reserva
+            WHERE r.id_cancha = ?
+            AND r.fecha BETWEEN ? AND ?
+            ORDER BY r.fecha, r.hora_inicio
+        """, (id_cancha, fecha_desde, fecha_hasta))
+        data = cursor.fetchall()
+        conn.close()
+        return data
 
 
 class TorneoDAO:
