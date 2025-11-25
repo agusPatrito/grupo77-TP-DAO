@@ -55,7 +55,7 @@ class VentanaPrincipal(ctk.CTk):
             self.img_clientes = self.img_canchas = self.img_reservas = self.img_reportes = self.img_logo = self.img_torneos = None
 
         # contenedor para los botones (columna 0)
-        frame_botones_menu = ctk.CTkFrame(menu_frame, fg_color="transparent")
+        frame_botones_menu = ctk.CTkScrollableFrame(menu_frame, fg_color="transparent")
         frame_botones_menu.grid(row=0, column=0, sticky="ns", padx=20, pady=20)
         frame_botones_menu.grid_columnconfigure(0, weight=1)
         frame_botones_menu.grid_rowconfigure(0, weight=1) # espacio superior
