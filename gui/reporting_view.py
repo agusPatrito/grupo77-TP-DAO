@@ -7,6 +7,8 @@ from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import matplotlib.pyplot as plt
 from gui.custom_messagebox import mostrar_mensaje_personalizado
+from tkcalendar import DateEntry
+
 
 
 
@@ -265,12 +267,30 @@ class VistaReportes(ctk.CTkFrame):
 
         # fechas
         ctk.CTkLabel(frame, text="Desde (YYYY-MM-DD):", font=FUENTE_BASE).grid(row=1, column=0, sticky="w", padx=10)
-        self.fecha_desde = ctk.CTkEntry(frame, width=150)
-        self.fecha_desde.grid(row=1, column=1, sticky="w")
+
+        self.fecha_desde = DateEntry(
+            frame,
+            width=12,
+            background="darkblue",
+            foreground="white",
+            borderwidth=2,
+            date_pattern="yyyy-mm-dd"
+        )
+        self.fecha_desde.grid(row=1, column=1, sticky="w", padx=5)
+
 
         ctk.CTkLabel(frame, text="Hasta (YYYY-MM-DD):", font=FUENTE_BASE).grid(row=2, column=0, sticky="w", padx=10)
-        self.fecha_hasta = ctk.CTkEntry(frame, width=150)
-        self.fecha_hasta.grid(row=2, column=1, sticky="w")
+
+        self.fecha_hasta = DateEntry(
+            frame,
+            width=12,
+            background="darkblue",
+            foreground="white",
+            borderwidth=2,
+            date_pattern="yyyy-mm-dd"
+        )
+        self.fecha_hasta.grid(row=2, column=1, sticky="w", padx=5)
+
 
         # botón buscar
         ctk.CTkButton(
@@ -384,6 +404,7 @@ class VistaReportes(ctk.CTkFrame):
                     row["monto_total"],
                 ),
             )
+
 
 
     # ------------------------------------------------------------------
