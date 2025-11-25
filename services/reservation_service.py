@@ -4,19 +4,43 @@ from services.court_service import CourtService
 import datetime
 
 class ReservationService:
+    # Atributos de clase para el Singleton
+    _instance = None
+    _initialized = False
+
+    def __new__(cls, *args, **kwargs):
+        """
+        Patron Singleton para el servicio de reservas.
+
+        Garantiza que exista una unica instancia compartida en toda la
+        aplicacion, incluso si se llama ReservationService() muchas veces
+        desde distintas vistas o controladores.
+        """
+        if cls._instance is None:
+            cls._instance = super(ReservationService, cls).__new__(cls)
+        return cls._instance
+
     def __init__(self):
+        # Evitamos re-ejecutar la inicializacion si la instancia ya fue creada
+        if self.__class__._initialized:
+            return
+
+        # Inicializacion real (la que ya tenias antes)
         self.reserva_dao = ReservaDAO()
         self.cancha_dao = CanchaDAO()
         self.cliente_dao = ClienteDAO()
-        self.horarios_dao = HorariosDAO() # Nuevo DAO
-        self.estados_reserva_dao = EstadosReservaDAO() # Nuevo DAO
-        self.horarios_x_canchas_dao = HorariosXCanchasDAO() # Nuevo DAO
+        self.horarios_dao = HorariosDAO()  # Nuevo DAO
+        self.estados_reserva_dao = EstadosReservaDAO()  # Nuevo DAO
+        self.horarios_x_canchas_dao = HorariosXCanchasDAO()  # Nuevo DAO
         self.servicio_cancha = CourtService()
 
         # cargamos IDs de estados de reserva al inicio
         self.id_estado_confirmada = self.estados_reserva_dao.obtener_por_nombre('Confirmada').id_estado_reserva
         self.id_estado_cancelada = self.estados_reserva_dao.obtener_por_nombre('Cancelada').id_estado_reserva
         self.id_estado_pendiente = self.estados_reserva_dao.obtener_por_nombre('Pendiente').id_estado_reserva
+
+        # Marcamos que ya se inicializó la única instancia
+        self.__class__._initialized = True
 
 
     def obtener_detalles_reservas(self):
