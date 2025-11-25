@@ -31,3 +31,15 @@ class ReportingService:
         totales = [row['total_reservas'] for row in sorted_data]
         
         return meses, totales
+    
+    def get_canchas_mas_utilizadas_con_ingresos(self):
+        data = self.reserva_dao.reporte_canchas_mas_utilizadas_con_ingresos()
+        return data
+
+
+    def get_reservas_por_hora(self):
+        data = self.reserva_dao.reporte_reservas_por_horario()
+        horas = [row["hora"] for row in data]
+        totales = [row["total"] for row in data]
+        return horas, totales
+

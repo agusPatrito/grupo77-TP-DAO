@@ -447,6 +447,40 @@ class ReservaDAO:
         conn.close()
         return afectadas
 
+    def reporte_canchas_mas_utilizadas_con_ingresos(self):
+        conn = obtener_conexion_bd()
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT 
+                c.nombre,
+                COUNT(r.id_reserva) AS total_reservas,
+                SUM(r.monto_total) AS ingresos
+            FROM reservas r
+            JOIN canchas c ON r.id_cancha = c.id_cancha
+            WHERE r.id_estado_reserva = (SELECT id_estado_reserva FROM estados_reserva WHERE nombre_estado='Confirmada')
+            GROUP BY c.id_cancha
+            ORDER BY total_reservas DESC
+        """)
+        data = cursor.fetchall()
+        conn.close()
+        return data
+
+
+    def reporte_reservas_por_horario(self):
+        conn = obtener_conexion_bd()
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT 
+                hora_inicio AS hora,
+                COUNT(*) AS total
+            FROM reservas
+            GROUP BY hora_inicio
+            ORDER BY hora_inicio
+        """)
+        data = cursor.fetchall()
+        conn.close()
+        return data
+
 
 
 
