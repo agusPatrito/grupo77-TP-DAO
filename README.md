@@ -5,7 +5,7 @@
 - Soria Ignacio 94607
 - Dagnino Facundo
 - Caranta Pablo
-- Soria Bautista
+- Casoria Bautista
 
 # Para correr el archivo:
 # .\.venv\Scripts\python.exe main.py
